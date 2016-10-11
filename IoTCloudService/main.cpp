@@ -74,7 +74,7 @@ int jsonTest()
 
 }
 */
-
+/*
 std::stringstream readBuffer;
 size_t recvWebCallback(char *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -89,6 +89,7 @@ size_t recvWebCallback(char *contents, size_t size, size_t nmemb, void *userp)
 	//readBuffer.append(contents, realsize);
 	return realsize;
 }
+
 
 void curlTest(string id,string pw)
 {
@@ -132,7 +133,7 @@ void curlTest(string id,string pw)
 	curl_global_cleanup();
 }
 
-
+*/
 
 int main()
 {
@@ -154,12 +155,16 @@ int main()
 	//curlTest("DDR","AAAAA");
 	//PAUSE;
 
-	
-	IoTCloudService service(SERVERPORT, MAXRECV, MAXCLIENTS);    
-    NetworkError error= service.StartIoTService();    
-    PAUSE;
-    service.StopIoTService();
-    
+
+	IoTCloudService service(SERVERPORT, MAXRECV, MAXCLIENTS);
+    NetworkError error= service.StartIoTService();
+    if(error==NetworkError_NoError)
+    {
+        PAUSE;
+        service.StopIoTService();
+    }
+
+
 
 
 

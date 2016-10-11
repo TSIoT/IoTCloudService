@@ -7,17 +7,7 @@
 
 using namespace std;
 
-#if defined(WIN32)
-//windows version need add the directory in Property > Linker > Additional library Directories
-//and Property > Linker > Input > Additional Dependencies with jansson_d.lib
-#include "../jansson/jansson.h"
-
-#elif defined(__linux__)
-//linux version need install jansson first, then add -ljansson in compile command
-#include <jansson.h>
-
-#endif
-
+#include "../jansson2.7/jansson.h"
 
 class JsonUtility
 {

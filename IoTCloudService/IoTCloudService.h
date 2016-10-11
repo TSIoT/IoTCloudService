@@ -14,8 +14,9 @@ using namespace std;
 class IoTCloudService:public TcpServer
 {
     //const string webServerIp="http://192.168.156.92/PairInterface/pairInterface.php";
-	const string webServerIp = "http://104.199.183.220/WeatherDataForGoogleCloudsPlatfrom/login.php";
+	const string webServerIp = "http://104.199.183.220/login.php";
 public:
+
     IoTCloudService(int port,int maxReceiveBuffer, int maxClient);
     ~IoTCloudService();
     NetworkError StartIoTService();
@@ -24,7 +25,7 @@ public:
 
 private:
     enum ConnType{ConnType_Unknown, ConnType_Manager, ConnType_EndNode};
-    enum IdCheck{IdCheck_PASS, IdCheck_FAILED, IdCheck_Timeout};
+    enum IdCheck{IdCheck_PASS, IdCheck_ID_FAILED, IdCheck_PW_FAILED, IdCheck_Timeout};
     enum PackageType{PackageType_Illegal,PackageType_Unknown, PackageType_REGISTER, PackageType_RESPONSE, PackageType_PairedConnectin};
 
 	/*

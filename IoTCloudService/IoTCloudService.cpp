@@ -7,6 +7,7 @@
 #include "IoTCloudService.h"
 #include "Utility/JsonUtility.h"
 #include "Utility/file.h"
+#include "IoT/IoTPackage.h"
 //#include "Utility/IoTUtility.h"
 
 
@@ -40,6 +41,7 @@ IoTCloudService::IoTCloudService(int port,int maxReceiveBuffer, int maxClient):T
 IoTCloudService::~IoTCloudService()
 {
     cout <<"Service closed!"<<endl;
+
 	/*
     int i=0;
     for(i=0;i<this->maxClient;i++)
@@ -73,15 +75,28 @@ void IoTCloudService::clearConnInfo(int index)
     //memset(this->connInfo[index].tempBuffer,0,this->maxReceiveBuffer);
     //this->connInfo[index].receiveCount=0;
 
+    cout << "Clear connection:" << index <<endl;
+    int pairIndex=this->connInfo->at(index).pairIndex;
+
 	this->connInfo->at(index).buffer.clear();
     this->connInfo->at(index).connType=ConnType_Unknown;
 
-    if(this->connInfo->at(index).pairIndex>=0)
+    if(pairIndex>=0)
     {
-
-        this->connInfo->at(this->connInfo->at(index).pairIndex).pairIndex=-1;
+        this->connInfo->at(pairIndex).pairIndex=-1;
         //this->connInfo[this->connInfo[index].pairIndex].pairIndex=-1;
+
+        //let manager know slave is disconnected
+        /*
+        if(this->connInfo->at(pairIndex).connType==ConnType_Manager)
+        {
+            IoTPackage package(IoTPackage::ProtocolVersion,"0","0","discon");
+            TcpServer::SendDataToExistsConnection(pairIndex,&package.DataVectorForSending);
+        }
+        */
     }
+
+
 
     this->connInfo->at(index).pairIndex=-1;
     this->connInfo->at(index).userID="";
@@ -107,7 +122,9 @@ void IoTCloudService::registerProcess(int socketIndex)
 
     string userType,userId,userPw;
     string unknownTypeMsg="The login type is unknown";
-    string loginFiledMsg="Login failed";
+    //string loginFiledMsg="Failed";
+    string idFiledMsg="ID Not exists";
+    string passwordFiledMsg="Password wrong";
     string loginTimeoutMsg="Login server timeout";
     string loginSuccessMsg="Success";
 
@@ -169,9 +186,15 @@ void IoTCloudService::registerProcess(int socketIndex)
         }
         break;
 
-    case IdCheck_FAILED:
-        cout << "Failed" << endl;
-        this->SendDataToExistsConnection(socketIndex,loginFiledMsg);
+    case IdCheck_ID_FAILED:
+        cout << "ID Failed" << endl;
+        this->SendDataToExistsConnection(socketIndex,idFiledMsg);
+        this->CutConnection(socketIndex);
+        break;
+
+    case IdCheck_PW_FAILED:
+        cout << "Password Failed" << endl;
+        this->SendDataToExistsConnection(socketIndex,passwordFiledMsg);
         this->CutConnection(socketIndex);
         break;
 
@@ -273,8 +296,8 @@ IoTCloudService::IdCheck IoTCloudService::curl_check_id_pw(string id, string pw)
 	string request = string("searchID=") + id + string("&searchPass=") + pw ;
 
 
-	IdCheck checkResult= IdCheck_FAILED;
-	int findResult=-1;
+	IdCheck checkResult= IdCheck_ID_FAILED;
+
 	long readPageTimeOutSecond=2L;
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -300,7 +323,7 @@ IoTCloudService::IdCheck IoTCloudService::curl_check_id_pw(string id, string pw)
         {
             //string temp=readBuffer.str();
             //cout << "Temp:" << temp << endl;
-            findResult = readBuffer.str().find("pass");
+            //findResult = readBuffer.str().find("pass");
 			json_t*root = JsonUtility::LoadJsonData(readBuffer.str());
 			string idResult = JsonUtility::GetValueInRootObject(root,"ID");
 			string pwResult = JsonUtility::GetValueInRootObject(root, "Password");
@@ -310,9 +333,13 @@ IoTCloudService::IdCheck IoTCloudService::curl_check_id_pw(string id, string pw)
             {
                 checkResult = IdCheck_PASS;
             }
-            else
+            else if(idResult=="error")
             {
-                checkResult = IdCheck_FAILED;
+                checkResult = IdCheck_ID_FAILED;
+            }
+            else if(pwResult=="error")
+            {
+                checkResult=IdCheck_PW_FAILED;
             }
 
         }
